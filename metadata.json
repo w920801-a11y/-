@@ -1,0 +1,7 @@
+{
+  "name": "Nearby Gourmet Precision Finder",
+  "description": "Discover high-quality dining spots within 2km with enhanced GPS accuracy and Gemini AI reasoning.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
