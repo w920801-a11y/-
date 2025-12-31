@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Location, SearchResult, Restaurant } from './types';
 import { findNearbyRestaurants } from './services/geminiService';
 import RestaurantCard from './components/RestaurantCard';
@@ -11,8 +11,18 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<SearchResult | null>(null);
   const [activeTab, setActiveTab] = useState<'list' | 'map'>('list');
+  const [isConfigMissing, setIsConfigMissing] = useState<boolean>(false);
+
+  useEffect(() => {
+    // 檢查 API 金鑰是否存在
+    if (!process.env.API_KEY || process.env.API_KEY === "") {
+      setIsConfigMissing(true);
+    }
+  }, []);
 
   const getCurrentLocation = useCallback(() => {
+    if (isConfigMissing) return;
+
     setLoading(true);
     setError(null);
     
@@ -22,11 +32,10 @@ const App: React.FC = () => {
       return;
     }
 
-    // Options for maximum accuracy
     const geoOptions = {
-      enableHighAccuracy: true, // 強制使用 GPS
-      timeout: 15000,           // 給硬體 15 秒時間鎖定位置
-      maximumAge: 0             // 不使用快取位置
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
     };
 
     navigator.geolocation.getCurrentPosition(
@@ -34,7 +43,7 @@ const App: React.FC = () => {
         const coords: Location = {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy, // 取得精準度（公尺）
+          accuracy: position.coords.accuracy,
         };
         setLocation(coords);
         fetchRestaurants(coords);
@@ -42,14 +51,14 @@ const App: React.FC = () => {
       (err) => {
         console.error("定位錯誤:", err);
         let msg = "無法取得您的位置。";
-        if (err.code === 1) msg = "請允許網站存取您的位置資訊以獲得精確結果。";
-        if (err.code === 3) msg = "定位逾時，請確保您在訊號良好的地方。";
+        if (err.code === 1) msg = "請允許網站存取您的位置資訊。";
+        if (err.code === 3) msg = "定位逾時。";
         setError(msg);
         setLoading(false);
       },
       geoOptions
     );
-  }, []);
+  }, [isConfigMissing]);
 
   const fetchRestaurants = async (coords: Location) => {
     try {
@@ -58,8 +67,7 @@ const App: React.FC = () => {
       const searchResult = await findNearbyRestaurants(coords);
       setResults(searchResult);
     } catch (err: any) {
-      console.error("App layer error:", err);
-      setError(err.message || "搜尋餐廳失敗，請稍後再試。");
+      setError(err.message || "搜尋餐廳失敗。");
     } finally {
       setLoading(false);
     }
@@ -74,6 +82,39 @@ const App: React.FC = () => {
         setTimeout(() => element.classList.remove('ring-2', 'ring-orange-500', 'ring-offset-2'), 2000);
     }
   };
+
+  // 如果缺少 API Key，顯示引導畫面
+  if (isConfigMissing) {
+    return (
+      <div className="h-screen w-screen bg-slate-900 flex items-center justify-center p-6 text-white">
+        <div className="max-w-md w-full space-y-8 text-center">
+          <div className="inline-flex p-4 bg-red-500/20 rounded-full">
+            <i className="fas fa-key text-4xl text-red-500"></i>
+          </div>
+          <div className="space-y-4">
+            <h1 className="text-3xl font-black tracking-tight">環境變數未設定</h1>
+            <p className="text-slate-400 leading-relaxed">
+              檢測到您的環境中缺少 <code className="bg-slate-800 px-2 py-1 rounded text-orange-400">API_KEY</code>。<br/>
+              這是為了保護您的金鑰不被公開洩漏。
+            </p>
+          </div>
+          <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 text-left space-y-4">
+            <h2 className="font-bold flex items-center gap-2">
+              <i className="fas fa-lightbulb text-yellow-400"></i> 如何修復？
+            </h2>
+            <ol className="text-sm text-slate-300 space-y-2 list-decimal list-inside">
+              <li>建議將此專案部屬至 <b>Vercel</b> 或 <b>Netlify</b>。</li>
+              <li>在部屬平台的 <b>Environment Variables</b> 中新增 <code className="text-white">API_KEY</code>。</li>
+              <li>填入您從 Google AI Studio 獲得的金鑰。</li>
+            </ol>
+          </div>
+          <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">
+            安全提示：請勿將金鑰直接寫死在程式碼中上傳至 GitHub。
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen bg-slate-50">
@@ -132,10 +173,7 @@ const App: React.FC = () => {
                 <div className="w-16 h-16 border-4 border-slate-200 border-t-orange-500 rounded-full animate-spin"></div>
                 <i className="fas fa-crosshairs absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-orange-500"></i>
              </div>
-             <div className="space-y-1">
-                <p className="text-slate-700 font-bold">正在鎖定高精度位置...</p>
-                <p className="text-slate-400 text-xs px-10">請確保您的手機/電腦 GPS 已開啟並允許授權</p>
-             </div>
+             <p className="text-slate-700 font-bold">正在鎖定高精度位置...</p>
           </div>
         )}
 
@@ -143,10 +181,7 @@ const App: React.FC = () => {
           <div className="absolute inset-0 z-40 bg-slate-50 flex items-center justify-center p-6">
             <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-red-100 text-center space-y-6">
               <i className="fas fa-circle-exclamation text-5xl text-red-400"></i>
-              <div className="space-y-2">
-                <h3 className="text-xl font-bold text-slate-800">定位遇到問題</h3>
-                <p className="text-slate-500 text-sm leading-relaxed">{error}</p>
-              </div>
+              <p className="text-slate-500 text-sm">{error}</p>
               <button
                 onClick={getCurrentLocation}
                 className="w-full py-3 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-colors"
@@ -183,7 +218,7 @@ const App: React.FC = () => {
                     </h2>
                     <div className="grid gap-4">
                       {results.restaurants.map((res, idx) => (
-                        <div id={`res-${res.name}`} key={`${res.name}-${idx}`} className="transition-all duration-300">
+                        <div id={`res-${res.name}`} key={`${res.name}-${idx}`}>
                            <RestaurantCard restaurant={res} />
                         </div>
                       ))}
@@ -206,11 +241,8 @@ const App: React.FC = () => {
             {location ? (
               <MapView userLocation={location} restaurants={results?.restaurants || []} onMarkerClick={handleMarkerClick} />
             ) : (
-              <div className="w-full h-full bg-slate-200 flex items-center justify-center">
-                 <div className="text-center space-y-2">
-                    <i className="fas fa-earth-asia text-4xl text-slate-300"></i>
-                    <p className="text-slate-400 text-sm">等待定位資訊...</p>
-                 </div>
+              <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400 text-sm">
+                 等待定位資訊...
               </div>
             )}
           </section>
