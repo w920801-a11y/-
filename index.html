@@ -10,8 +10,19 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script>
-    // 防止在沒有 process 環境的瀏覽器中崩潰
-    window.process = window.process || { env: {} };
+    /**
+     * Shim process.env for browser environments.
+     * This prevents the app from crashing on static hosts like GitHub Pages
+     * when it tries to check for API_KEY.
+     */
+    window.process = window.process || {};
+    window.process.env = window.process.env || {};
+    
+    // 如果環境中沒有 API_KEY，我們將其初始化為空字串，
+    // 這樣 App.tsx 就能正確偵測並顯示「金鑰未設定」的提示畫面。
+    if (window.process.env.API_KEY === undefined) {
+      window.process.env.API_KEY = "";
+    }
   </script>
 <script type="importmap">
 {
@@ -23,6 +34,8 @@
   }
 }
 </script>
+<!-- 關鍵：明確加入進入點腳本 -->
+<script type="module" src="index.tsx"></script>
 <style>
   .leaflet-container {
     width: 100%;
@@ -42,9 +55,26 @@
   ::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
   }
+  /* 初始載入動畫 */
+  .initial-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background: #f8fafc;
+    color: #64748b;
+    font-family: sans-serif;
+  }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900 overflow-hidden">
-  <div id="root"></div>
+  <div id="root">
+    <!-- 當 JS 還沒載入完畢時顯示的內容 -->
+    <div class="initial-loader">
+      <div class="w-12 h-12 border-4 border-slate-200 border-t-orange-500 rounded-full animate-spin mb-4"></div>
+      <p>正在初始化美食雷達...</p>
+    </div>
+  </div>
 </body>
 </html>
