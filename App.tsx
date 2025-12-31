@@ -14,9 +14,11 @@ const App: React.FC = () => {
   const [isConfigMissing, setIsConfigMissing] = useState<boolean>(false);
 
   useEffect(() => {
-    // 檢查 API 金鑰是否存在
-    if (!process.env.API_KEY || process.env.API_KEY === "") {
+    // 檢查 API 金鑰是否存在。在 Vercel 部屬後，這會自動讀取您在後台設定的變數。
+    if (!process.env.API_KEY || process.env.API_KEY === "" || process.env.API_KEY === "undefined") {
       setIsConfigMissing(true);
+    } else {
+      setIsConfigMissing(false);
     }
   }, []);
 
@@ -83,34 +85,35 @@ const App: React.FC = () => {
     }
   };
 
-  // 如果缺少 API Key，顯示引導畫面
   if (isConfigMissing) {
     return (
       <div className="h-screen w-screen bg-slate-900 flex items-center justify-center p-6 text-white">
         <div className="max-w-md w-full space-y-8 text-center">
-          <div className="inline-flex p-4 bg-red-500/20 rounded-full">
-            <i className="fas fa-key text-4xl text-red-500"></i>
+          <div className="inline-flex p-4 bg-orange-500/20 rounded-full">
+            <i className="fas fa-rocket text-4xl text-orange-500 animate-bounce"></i>
           </div>
           <div className="space-y-4">
-            <h1 className="text-3xl font-black tracking-tight">環境變數未設定</h1>
+            <h1 className="text-3xl font-black tracking-tight">Vercel 部屬準備就緒</h1>
             <p className="text-slate-400 leading-relaxed">
-              檢測到您的環境中缺少 <code className="bg-slate-800 px-2 py-1 rounded text-orange-400">API_KEY</code>。<br/>
-              這是為了保護您的金鑰不被公開洩漏。
+              您的程式碼已經上傳成功！現在只差最後一步：<br/>
+              <b>請前往 Vercel 控制面板設定 API 金鑰。</b>
             </p>
           </div>
           <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 text-left space-y-4">
             <h2 className="font-bold flex items-center gap-2">
-              <i className="fas fa-lightbulb text-yellow-400"></i> 如何修復？
+              <i className="fas fa-cog text-blue-400"></i> 設定步驟：
             </h2>
-            <ol className="text-sm text-slate-300 space-y-2 list-decimal list-inside">
-              <li>建議將此專案部屬至 <b>Vercel</b> 或 <b>Netlify</b>。</li>
-              <li>在部屬平台的 <b>Environment Variables</b> 中新增 <code className="text-white">API_KEY</code>。</li>
-              <li>填入您從 Google AI Studio 獲得的金鑰。</li>
+            <ol className="text-sm text-slate-300 space-y-3 list-decimal list-inside">
+              <li>進入 Vercel 的專案頁面</li>
+              <li>點擊上方選單的 <span className="text-white font-mono">Settings</span></li>
+              <li>點擊左側導覽的 <span className="text-white font-mono">Environment Variables</span></li>
+              <li>新增一組：<br/>
+                  Key: <code className="bg-slate-700 px-2 py-0.5 rounded text-orange-400">API_KEY</code><br/>
+                  Value: <span className="text-slate-400 font-italic">(貼上您的金鑰)</span>
+              </li>
+              <li>重新點擊 <span className="text-white font-mono">Deployments</span> 並進行 Redeploy。</li>
             </ol>
           </div>
-          <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">
-            安全提示：請勿將金鑰直接寫死在程式碼中上傳至 GitHub。
-          </p>
         </div>
       </div>
     );
@@ -128,7 +131,7 @@ const App: React.FC = () => {
               <h1 className="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 tracking-tight leading-none">
                 NearBite
               </h1>
-              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mt-1">精準美食探索</p>
+              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mt-1">Vercel 雲端驅動</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -152,16 +155,16 @@ const App: React.FC = () => {
                 <i className="fas fa-utensils text-4xl text-orange-500"></i>
               </div>
               <div className="space-y-2">
-                <h2 className="text-2xl font-bold text-slate-800">肚子餓了嗎？</h2>
+                <h2 className="text-2xl font-bold text-slate-800">準備好大快朵頤？</h2>
                 <p className="text-slate-500 text-sm leading-relaxed">
-                  點擊下方按鈕，我們將使用 AI 為您尋找半徑 2km 內最精準的美食推薦。
+                  點擊按鈕，AI 將即時分析您周邊 2km 內最值得造訪的餐廳。
                 </p>
               </div>
               <button
                 onClick={getCurrentLocation}
                 className="w-full py-4 bg-orange-500 text-white rounded-2xl font-black text-lg hover:bg-orange-600 transition-all shadow-lg hover:shadow-orange-200 active:scale-95"
               >
-                開始精準定位
+                搜尋美食地圖
               </button>
             </div>
           </div>
@@ -171,9 +174,9 @@ const App: React.FC = () => {
           <div className="absolute inset-0 z-40 bg-slate-50/60 backdrop-blur-[2px] flex flex-col items-center justify-center space-y-4 text-center p-6">
              <div className="relative">
                 <div className="w-16 h-16 border-4 border-slate-200 border-t-orange-500 rounded-full animate-spin"></div>
-                <i className="fas fa-crosshairs absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-orange-500"></i>
+                <i className="fas fa-location-crosshairs absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-orange-500"></i>
              </div>
-             <p className="text-slate-700 font-bold">正在鎖定高精度位置...</p>
+             <p className="text-slate-700 font-bold">正在連線至雲端雷達...</p>
           </div>
         )}
 
@@ -228,7 +231,7 @@ const App: React.FC = () => {
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-slate-300 opacity-50 space-y-3">
                   <i className="fas fa-map-pin text-4xl"></i>
-                  <p className="text-sm font-medium">請開始搜尋以查看結果</p>
+                  <p className="text-sm font-medium">請點擊上方按鈕開始搜尋</p>
                 </div>
               )}
             </div>
